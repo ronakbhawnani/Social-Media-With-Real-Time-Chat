@@ -1,5 +1,6 @@
 python-dotenv==1.0.1
 Django==5.2.1
+django-allauth==0.59.0
 gunicorn==23.0.0
 absl-py==2.1.0
 altair==5.5.0
