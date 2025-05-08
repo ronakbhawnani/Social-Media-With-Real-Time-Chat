@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load posts_tags %}
+{% load static %}
+
+{% block title %}Home{% endblock title %}
+
+{% block content %}
+
+	<div class="container">
+		<div class="row py-3">
+			{% include 'posts/left-section.html' %}
+			<div class="col-lg-6">
+				{% url 'home' as post_url %}
+				{% include 'posts/post-create.html' with post_url=post_url %}
+
+				{% include 'posts/post-feeds.html' %}
+			</div>
+			{% chats request.user.pk %}
+		</div>
+	</div>
+
+{% endblock content %}
+
+{% block js %}
+	<script src="{% static 'js/media-uploader.js' %}"></script>
+	{% include 'posts/post_like_script.html' %}
+{% endblock js %}

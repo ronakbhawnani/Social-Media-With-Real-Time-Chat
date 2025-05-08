@@ -1,0 +1,56 @@
+<div class="bg-white border rounded mb-3">
+
+    <!-- Group Profile Photo -->
+
+    <div>
+        <div class="rounded" style="height: 300px;">
+            <img src="{{ group.get_profileimage }}" class="rounded">
+        </div>
+    </div>
+
+    <!-- Group Title -->
+
+    <div class="px-3">
+        <div class="d-flex flex-column flex-lg-row justify-content-lg-between align-items-lg-center py-2 py-lg-3">
+            <div class="d-flex flex-column">
+                <a href="{{ group.get_absolute_url }}" class="font-weight-bold f-xl text-dark">{{ group.name }}</a>
+                <span class="f-w6 text-muted">{{ group.members.all.count }} members</span>
+            </div>
+            <div class="mt-2 mt-lg-0">
+                <a href="{% url 'join_group' group.pk request.user.pk %}" class="btn bg-secondary-light blue-link mr-1">
+                    {% if request.user in group.members.all %}
+                        <i class="fa fa-user-check mr-1"></i>
+                        Joined
+                    {% else %}
+                        <i class="fa fa-users mr-1"></i>
+                        Join
+                    {% endif %}
+                </a>
+                <a href="#" class="btn btn-success">
+                    <i class="fa fa-plus mr-1"></i>
+                    Invite
+                </a>
+            </div>
+        </div>
+        <hr>
+        <ul class="nav mb-1 justify-content-around justify-content-md-start">
+            <li class="nav-item">
+                <a href="{% url 'group_detail' group.pk %}" class="nav-link nav-item-line {% if posts and 'about' not in request.path %}active{% endif %} text-muted f-w6 profile__profile-nav-link" style="font-size: 17px;">Feeds</a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'group_about' group.pk %}" class="nav-link nav-item-line text-muted f-w6 profile__profile-nav-link {% if 'about' in request.path %}active{% endif %}" style="font-size: 17px;">About</a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'group_members' group.pk %}" class="nav-link nav-item-line text-muted f-w6 profile__profile-nav-link {% if 'members' in request.path %}active{% endif %}" style="font-size: 17px;">Members</a>
+            </li>
+            <li class="nav-item">
+                <a href="{% url 'group_photos' group.pk %}" class="nav-link nav-item-line text-muted f-w6 profile__profile-nav-link {% if 'media' in request.path %}active{% endif %}" style="font-size: 17px;">Media</a>
+            </li>
+            {% if request.user in group.admin_members.all %}
+                <li class="nav-item">
+                    <a href="{% url 'group_settings' group.pk %}" class="nav-link nav-item-line text-muted f-w6 profile__profile-nav-link {% if 'settings' in request.path %}active{% endif %}" style="font-size: 17px;">Settings</a>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>

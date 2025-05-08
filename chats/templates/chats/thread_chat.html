@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load chats_tags %}
+{% load static %}
+
+{% block title %}Chats{% endblock title %}
+
+{% block content %}
+
+	<div style="height: calc(100vh - 68px);">
+	    <div class="d-flex flex-column justify-content-center align-items-center chat-container h-100">
+	        
+	        <div class="d-flex flex-column flex-lg-row h-100 w-100">
+
+	        	{% mobile_thread_list %}
+
+	        	<!-- Chat Overlay (Mobile) -->
+
+	        	<div class="position-fixed w-100 h-100 chat-overlay-mobile" style="top: 0; left: 0; z-index: 3; background: rgba(0, 0, 0, 0.5); visibility: hidden; opacity: 0;"></div>
+
+	            {% thread_list %}
+
+	            <div class="rounded border bg-white px-4 py-3 d-flex flex-column flex-grow-1 flex-lg-grow-0 main-chat" style="height: 100%; width: 75%;">
+
+	            	<!-- Main Chat Header -->
+
+	            	<div class="d-flex justify-content-between align-items-center">
+	            		<div class="d-flex align-items-center">
+	            			<div class="rounded-circle" style="width: 50px; height: 50px;">
+	            				<img src="{{ chat_user.userprofile.get_profileimage }}" class="rounded-circle">
+	            			</div>
+	            			<div class="d-flex flex-column ml-2">
+	            				<a href="{% url 'profile_post' chat_user.pk %}" class="font-weight-bold text-dark">{{ chat_user.userprofile.full_name }}</a>
+	            			</div>
+	            		</div>
+	            	</div>
+
+	            	<hr class="my-3 w-100">
+
+	            	<!-- Messages -->
+
+	            	<div class="flex-grow-1 chat-list" style="overflow-y: auto;">
+	            		<div class="chat-data">
+	            			{% for data in thread_data %}
+		            			{% if data.user == request.user %}
+		            				{% if data.message %}
+
+			            				<div class="d-flex justify-content-end my-3">
+			            					<div class="d-flex flex-column align-items-end">
+			            						<span class="rounded bg-primary text-white mb-1 py-1 px-2">{{ data.message }}</span>
+			            						<span class="text-muted small">{{ data.created | date:'d/m/y h:i A' }}</span>
+			            					</div>
+			            				</div>
+
+		            				{% else %}
+
+			            				<div class="d-flex justify-content-end my-3">
+			            					<div class="d-flex flex-column align-items-end">
+			            						{% for image in data.chatimage_set.all %}
+				            						<div class="mb-1" style="width: 200px">
+				            							<img src="{{ image.image.url }}" style="height: auto;">
+				            						</div>
+			            						{% endfor %}
+			            						<span class="text-muted small">{{ data.created | date:'d/m/y h:i A' }}</span>
+			            					</div>
+			            				</div>
+
+		            				{% endif %}
+		            			{% else %}
+			            			{% if data.message %}
+
+				            			<div class="d-flex my-3">
+				            				<div class="rounded-circle mr-1 flex-shrink-0" style="width: 30px; height: 30px;">
+				            					<img src="{{ chat_user.userprofile.get_profileimage }}" class="rounded-circle">
+				            				</div>
+				            				<div class="d-flex flex-column ml-2">
+				            					<span class="rounded background-llgrey mb-1 py-1 px-2">{{ data.message }}</span>
+				            					<span class="text-muted small">{{ data.created | date:'d/m/y h:i A' }}</span>
+				            				</div>
+				            			</div>
+
+				            		{% else %}
+
+				            			<div class="d-flex my-3">
+				            				<div class="rounded-circle mr-1 flex-shrink-0" style="width: 30px; height: 30px;">
+				            					<img src="{{ chat_user.userprofile.get_profileimage }}" class="rounded-circle">
+				            				</div>
+			            					<div class="d-flex flex-column">
+			            						{% for image in data.chatimage_set.all %}
+				            						<div class="mb-1" style="width: 200px">
+				            							<img src="{{ image.image.url }}" style="height: auto;">
+				            						</div>
+			            						{% endfor %}
+			            						<span class="text-muted small">{{ data.created | date:'d/m/y h:i A' }}</span>
+			            					</div>
+			            				</div>
+
+			            			{% endif %}
+		            			{% endif %}
+	            			{% endfor %}
+	            		</div>
+	            	</div>
+
+	            	<hr class="my-3 w-100">
+
+	            	<!-- Main Chat Send Chat Input -->
+
+	            	<div>
+	            		<div class="d-flex uploaded-img-container flex-wrap align-items-center"></div>
+	            		<form class="form-inline chat-form justify-content-end align-items-center flex-nowrap chat-form" method="post" action="{% url 'chat_create' thread.pk %}" enctype="multipart/form-data">
+	            			{% csrf_token %}
+	            			<div class="form-group flex-grow-1 mb-2 mb-md-0">
+	            				<input type="text" name="message" class="form-control w-100 chat-message" placeholder="Type a message">
+	            			</div>
+	            			<div class="form-group ml-2 mb-0">
+	            				<label class="btn btn-sm background-lgrey py-2">
+	            					<input type="file" name="chat-image" class="d-none post-create-img-input chat-image" multiple="multiple">
+	            					<i class="fa fa-images"></i>
+	            				</label>
+	            			</div>
+	            			<button type="submit" class="btn btn-sm btn-primary ml-2 align-self-start align-self-md-stretch py-2 py-md-0" style="padding: 0.275rem 0.75rem;">
+	            				<i class="far fa-paper-plane"></i>
+	            			</button>
+	            		</form>
+	            	</div>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+{% endblock content %}
+
+{% block js %}
+	<script src="{% static 'js/chat.js' %}"></script>
+	<script src="{% static 'js/media-uploader.js' %}"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.js" integrity="sha512-SxQulwFs2B38bmUJtBSo9tD07MDrtCbY8me3AOZ14tRknCPTeMDLvCQV4ekhs8R0o9QPnW5HQanKfveexVcwLA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script>
+		const chatForm = document.querySelector('.chat-form');
+		const chatMessage = document.querySelector('.chat-message');
+		const chatImage = document.querySelector('.chat-image');
+		const chatData = document.querySelector('.chat-data');
+		const formData = new FormData();
+
+		async function submitFormData(formData) {
+			const url = `{% url 'chat_create' thread.pk %}`
+			try {
+				const response = await fetch(url, {
+					method: 'POST',
+					headers: {
+						'Accept': 'application/json',
+				        "X-Requested-With": "XMLHttpRequest",
+				        "HTTP_X_REQUESTED_WITH": "XMLHttpRequest",
+						'X-CSRFToken': '{{csrf_token}}',
+					},
+					body: formData,
+				});
+				const result = await response.json();
+				return result;
+			} catch (error) {
+				console.log('Error', error);
+			};
+		};
+
+		chatForm.addEventListener('submit', function(e) {
+			e.preventDefault();
+			formData.append(chatMessage.getAttribute('name'), chatMessage.value);
+			const photos = chatImage.files;
+			for (let i = 0; i < photos.length; i++) {
+				formData.append('chat-image', photos[i]);
+			};
+			submitFormData(formData).then(response => {
+				if (response.status == 'success') {
+					const clearImgsBtn = document.querySelector('.clear-imgs-btn');
+					if (clearImgsBtn) clearImgsBtn.click();
+					chatMessage.value = '';
+					sendChatData(response);
+				};
+			});
+		});
+
+		let loc = window.location;
+		let wsProtocol = loc.protocol == 'http:' ? 'ws://' : 'wss://';
+		const path = wsProtocol + loc.host + '/ws' + loc.pathname;
+		const chatSocket = new ReconnectingWebSocket(path);
+
+		function sendChatData(response) {
+			chatSocket.send(JSON.stringify(response));
+		};
+
+		chatSocket.onmessage = function (e) {
+			updateChat(JSON.parse(e.data).data);
+		};
+
+
+		function updateChat(data) {
+			new_chat = ''
+			if (data.user == '{{ request.user.username }}') {
+				if (data.chat_message) {
+					new_chat += `
+						<div class="d-flex justify-content-end my-3">
+							<div class="d-flex flex-column align-items-end">
+								<span class="rounded bg-primary text-white mb-1 py-1 px-2">${data.chat_message}</span>
+								<span class="text-muted small">${data.date}</span>
+							</div>
+						</div>
+					`
+				}
+				if (data.chat_images) {
+					new_chat += `
+						<div class="d-flex justify-content-end my-3">
+			            	<div class="d-flex flex-column align-items-end">
+					`
+					for (let img of data.chat_images) {
+						new_chat += `
+							<div class="mb-1" style="width: 200px">
+								<img src="${img}" style="height: auto;">
+							</div>
+						`
+					}
+					new_chat += `
+								<span class="text-muted small">${data.date}</span>
+							</div>
+						</div>
+					`
+				}
+			} else {
+				if (data.chat_message) {
+					new_chat += `
+						<div class="d-flex my-3">
+							<div class="rounded-circle mr-1 flex-shrink-0" style="width: 30px; height: 30px;">
+								<img src="{{ chat_user.userprofile.get_profileimage }}" class="rounded-circle">
+							</div>
+							<div class="d-flex flex-column ml-2">
+								<span class="rounded background-llgrey mb-1 py-1 px-2">${data.chat_message}</span>
+								<span class="text-muted small">${data.date}</span>
+							</div>
+						</div>
+					`
+				}
+				if (data.chat_images) {
+					new_chat += `
+            			<div class="d-flex my-3">
+            				<div class="rounded-circle mr-1 flex-shrink-0" style="width: 30px; height: 30px;">
+            					<img src="{{ chat_user.userprofile.get_profileimage }}" class="rounded-circle">
+            				</div>
+        					<div class="d-flex flex-column">
+					`
+					for (let img of data.chat_images) {
+						new_chat += `
+							<div class="mb-1" style="width: 200px">
+								<img src="${img}" style="height: auto;">
+							</div>
+						`
+					}
+					new_chat += `
+								<span class="text-muted small">${data.date}</span>
+							</div>
+						</div>
+					`
+				}
+			}
+			chatData.innerHTML += new_chat;
+		}
+	</script>
+{% endblock js %}

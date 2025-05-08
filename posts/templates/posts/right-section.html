@@ -1,0 +1,19 @@
+<div class="col-lg-3 d-none d-lg-block">
+	<div class="p-3 bg-white">
+		<h5 class="font-weight-bold">Messenger</h5>
+		<ul class="list-unstyled mt-4">
+			{% for user in user_threads %}
+				<li class="mt-4">
+					<a href="{% url 'thread_chat' user.pk %}" class="d-flex align-items-center">
+						<div class="rounded-circle" style="width: 35px; height: 35px;">
+							<img src="{{ user.userprofile.get_profileimage }}" class="rounded-circle">
+						</div>
+						<span class="ml-2 font-weight-bold text-dark">{{ user.userprofile.full_name }}</span>
+					</a>
+				</li>
+			{% empty %}
+				<h4 class="text-muted">No Chat Or Messages</h4>
+			{% endfor %}
+		</ul>
+	</div>
+</div>
