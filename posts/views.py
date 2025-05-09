@@ -6,6 +6,7 @@ from posts.forms import PostCreateForm
 from posts.utils import get_feeds_queryset
 from groups.models import CustomGroup
 from posts.models import PostImage, Post
+from django.views.generic import DetailView
 
 class HomePageView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
     template_name = 'posts/home.html'
