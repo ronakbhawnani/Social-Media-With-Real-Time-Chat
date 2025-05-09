@@ -1,59 +1,57 @@
-from django.shortcuts import render, redirect
-from django.db.models import Q
-from django.views.generic import TemplateView, DetailView, View, UpdateView
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.forms.models import model_to_dict
-from django.http import JsonResponse
-from posts.forms import PostCreateForm, PostEditForm, CommentForm, ReplyForm
-from posts.models import PostImage, Post, Comment, Reply
-from posts.utils import get_feeds_queryset
-from posts.decorators import AjaxRequiredOnlyMixin
-from groups.models import CustomGroup
-
 # Create your views here.
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.generic import TemplateView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from posts.forms import PostCreateForm
+from posts.utils import get_feeds_queryset
+from groups.models import CustomGroup
+from posts.models import PostImage, Post
 
 class HomePageView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
-	template_name = 'posts/home.html'
-	group = None
+    template_name = 'posts/home.html'
+    group = None
 
-	def dispatch(self, request, *args, **kwargs):
-		if kwargs.get('group_pk'):
-			self.group = CustomGroup.objects.get(pk=kwargs['group_pk'])
-		return super().dispatch(request, *args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        group_pk = kwargs.get('group_pk')
+        if group_pk:
+            self.group = get_object_or_404(CustomGroup, pk=group_pk)
+        return super().dispatch(request, *args, **kwargs)
 
-	def get_context_data(self, *args, **kwargs):
-		context = super().get_context_data(*args, **kwargs)
-		context['posts'] = get_feeds_queryset(self.request)
-		context['page'] = 'home'
-		return context
+    def get_context_data(self, *args, **kwargs):
+        context = super().get_context_data(*args, **kwargs)
+        context['posts'] = get_feeds_queryset(self.request)
+        context['page'] = 'home'
+        context['group'] = self.group  # Ensure template can access group
+        context['post_form'] = PostCreateForm()  # Ensure form is always available
+        return context
 
-	def post(self, request, *args, **kwargs):
-		post_form = PostCreateForm(request.POST, request.FILES)
-		redirect_url = 'home'
-		if post_form.is_valid():
-			post_form = post_form.save(commit=False)
-			post_form.user = request.user
-			if self.group:
-				post_form.group = self.group
-				post_form.visibility = 'public'
-				redirect_url = self.group.get_absolute_url()
-			try:
-				post_form.shared_post = Post.objects.get(pk=kwargs['post_pk'])
-			except:
-				pass
-			post_form.save()
-			images = request.FILES.getlist('images')
-			if images:
-				for image in images:
-					PostImage.objects.create(post=post_form, image=image)
-			return redirect(redirect_url)
-		return self.render_to_response({'post_form': post_form,})
+    def post(self, request, *args, **kwargs):
+        post_form = PostCreateForm(request.POST, request.FILES)
+        redirect_url = 'home'
+        if post_form.is_valid():
+            post_form = post_form.save(commit=False)
+            post_form.user = request.user
+            if self.group:
+                post_form.group = self.group
+                post_form.visibility = 'public'
+                redirect_url = self.group.get_absolute_url()
+            try:
+                post_form.shared_post = Post.objects.get(pk=kwargs.get('post_pk'))
+            except Post.DoesNotExist:
+                pass
+            post_form.save()
+            images = request.FILES.getlist('images')
+            for image in images:
+                PostImage.objects.create(post=post_form, image=image)
+            return redirect(redirect_url)
+        return self.render_to_response({'post_form': post_form})
 
-	def test_func(self):
-		if self.group:
-			return self.request.user in self.group.members.all()
-		return True
+    def test_func(self):
+        if self.group:
+            return self.request.user in self.group.members.all()
+        return True
 
+# This should be at the bottom of your views.py
 home_page_view = HomePageView.as_view()
 
 class PostDetailView(LoginRequiredMixin, DetailView):
