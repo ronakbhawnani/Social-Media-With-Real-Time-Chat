@@ -16,17 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-import allauth.account
 from django.conf import settings
 from django.conf.urls.static import static
 from accounts.views import user_signup_view
+from posts.views import home_page_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/signup/', user_signup_view, name='signup'),
     path('account/', include('accounts.urls')),
     path('accounts/', include('allauth.account.urls')),
-    path('', include('posts.urls')),
+    path('', home_page_view, name='home'),  # root URL maps to HomePageView
     path('groups/', include('groups.urls')),
     path('chats/', include('chats.urls')),
 ]
