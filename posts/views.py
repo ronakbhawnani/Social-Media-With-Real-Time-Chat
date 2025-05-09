@@ -10,6 +10,9 @@ from posts.models import PostImage, Post, Comment, Reply
 from posts.utils import get_feeds_queryset
 from posts.decorators import AjaxRequiredOnlyMixin
 from groups.models import CustomGroup
+import logging
+
+logger = logging.getLogger(__name__)
 
 class HomePageView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
     template_name = 'posts/home.html'
@@ -18,36 +21,44 @@ class HomePageView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
     def dispatch(self, request, *args, **kwargs):
         group_pk = kwargs.get('group_pk')
         if group_pk:
-            self.group = get_object_or_404(CustomGroup, pk=group_pk)
+            try:
+                self.group = CustomGroup.objects.get(pk=group_pk)
+            except CustomGroup.DoesNotExist:
+                logger.error(f"Group with pk={group_pk} does not exist.")
+                self.group = None
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)
-        context['posts'] = get_feeds_queryset(self.request)
+        try:
+            context['posts'] = get_feeds_queryset(self.request)
+        except Exception as e:
+            logger.error(f"Error getting feed posts: {e}")
+            context['posts'] = []  # fallback to empty list
         context['page'] = 'home'
-        context['group'] = self.group  # Ensure template can access group
-        context['post_form'] = PostCreateForm()  # Ensure form is always available
         return context
 
     def post(self, request, *args, **kwargs):
         post_form = PostCreateForm(request.POST, request.FILES)
         redirect_url = 'home'
         if post_form.is_valid():
-            post_form = post_form.save(commit=False)
-            post_form.user = request.user
+            post = post_form.save(commit=False)
+            post.user = request.user
             if self.group:
-                post_form.group = self.group
-                post_form.visibility = 'public'
+                post.group = self.group
+                post.visibility = 'public'
                 redirect_url = self.group.get_absolute_url()
             try:
-                post_form.shared_post = Post.objects.get(pk=kwargs.get('post_pk'))
-            except Post.DoesNotExist:
+                post.shared_post = Post.objects.get(pk=kwargs.get('post_pk'))
+            except (Post.DoesNotExist, TypeError):
                 pass
-            post_form.save()
-            images = request.FILES.getlist('images')
-            for image in images:
-                PostImage.objects.create(post=post_form, image=image)
+            post.save()
+
+            for image in request.FILES.getlist('images'):
+                PostImage.objects.create(post=post, image=image)
+
             return redirect(redirect_url)
+
         return self.render_to_response({'post_form': post_form})
 
     def test_func(self):
@@ -55,7 +66,6 @@ class HomePageView(UserPassesTestMixin, LoginRequiredMixin, TemplateView):
             return self.request.user in self.group.members.all()
         return True
 
-# This should be at the bottom of your views.py
 home_page_view = HomePageView.as_view()
 
 class PostDetailView(LoginRequiredMixin, DetailView):
