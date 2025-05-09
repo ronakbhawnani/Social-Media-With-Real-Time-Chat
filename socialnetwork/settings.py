@@ -161,16 +161,28 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'account_login'
 
-EMAIL_PORT = int(os.getenv('EMAIL_PORT'))
-EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL') == '0'
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'django_smtp_ssl.SSLEmailBackend'
+# Email Settings
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django_smtp_ssl.SSLEmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.example.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 465))
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', '1') == '1'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'your@email.com')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'your-email-password')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+
+# Disable email confirmation temporarily to avoid 500 errors on signup
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_EMAIL_REQUIRED = True
+
+# Django Allauth Settings
+AUTHENTICATION_BACKENDS = (
+    "django.contrib.auth.backends.ModelBackend",
+    "allauth.account.auth_backends.AuthenticationBackend",
+)
+SITE_ID = 1
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+ACCOUNT_USERNAME_REQUIRED = True
+ACCOUNT_UNIQUE_EMAIL = True
 
 CHANNEL_LAYERS = {
     "default": {
